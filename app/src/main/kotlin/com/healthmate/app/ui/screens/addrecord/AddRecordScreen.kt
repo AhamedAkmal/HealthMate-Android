@@ -7,13 +7,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.WaterDrop
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -23,20 +28,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.healthmate.app.presentation.addrecord.AddRecordViewModel
 import com.healthmate.app.ui.components.PrimaryButton
 import com.healthmate.app.ui.components.SectionHeader
 import com.healthmate.app.ui.theme.CaloriesOrange
@@ -44,20 +48,31 @@ import com.healthmate.app.ui.theme.StepsGreen
 import com.healthmate.app.ui.theme.WaterBlue
 import com.healthmate.app.util.DateFormatter
 import com.healthmate.app.util.DatePickerUtils
-import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddRecordScreen() {
+fun AddRecordScreen(
+    viewModel: AddRecordViewModel
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-
-    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var steps by remember { mutableStateOf("") }
-    var calories by remember { mutableStateOf("") }
-    var water by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
+
+    // Handle success event
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            snackbarHostState.showSnackbar("Record saved successfully!")
+            viewModel.consumeSuccess() // Reset form
+        }
+    }
+
+    // Handle error event (e.g., duplicate date)
+    LaunchedEffect(uiState.saveError) {
+        uiState.saveError?.let { error ->
+            snackbarHostState.showSnackbar(error)
+            viewModel.consumeError()
+        }
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -76,12 +91,14 @@ fun AddRecordScreen() {
                 subtitle = "Enter your health metrics for today or a past date"
             )
 
-            // Date field (read-only, opens picker on tap)
+            // Date field
             OutlinedTextField(
-                value = DateFormatter.formatForDisplay(selectedDate.toString()),
+                value = DateFormatter.formatForDisplay(uiState.date.toString()),
                 onValueChange = { },
                 readOnly = true,
                 label = { Text("Date") },
+                isError = uiState.dateError != null,
+                supportingText = uiState.dateError?.let { { Text(it) } },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.CalendarToday,
@@ -102,10 +119,12 @@ fun AddRecordScreen() {
 
             // Steps field
             OutlinedTextField(
-                value = steps,
-                onValueChange = { steps = it.filter { ch -> ch.isDigit() } },
+                value = uiState.steps,
+                onValueChange = viewModel::onStepsChange,
                 label = { Text("Steps") },
                 placeholder = { Text("e.g. 7850") },
+                isError = uiState.stepsError != null,
+                supportingText = uiState.stepsError?.let { { Text(it) } },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.DirectionsWalk,
@@ -121,10 +140,12 @@ fun AddRecordScreen() {
 
             // Calories field
             OutlinedTextField(
-                value = calories,
-                onValueChange = { calories = it.filter { ch -> ch.isDigit() } },
+                value = uiState.calories,
+                onValueChange = viewModel::onCaloriesChange,
                 label = { Text("Calories burned") },
                 placeholder = { Text("e.g. 420") },
+                isError = uiState.caloriesError != null,
+                supportingText = uiState.caloriesError?.let { { Text(it) } },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.LocalFireDepartment,
@@ -140,10 +161,12 @@ fun AddRecordScreen() {
 
             // Water field
             OutlinedTextField(
-                value = water,
-                onValueChange = { water = it.filter { ch -> ch.isDigit() } },
+                value = uiState.water,
+                onValueChange = viewModel::onWaterChange,
                 label = { Text("Water intake (ml)") },
                 placeholder = { Text("e.g. 2000") },
+                isError = uiState.waterError != null,
+                supportingText = uiState.waterError?.let { { Text(it) } },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.WaterDrop,
@@ -160,15 +183,17 @@ fun AddRecordScreen() {
             Spacer(modifier = Modifier.height(8.dp))
 
             PrimaryButton(
-                text = "Save Record",
-                onClick = {
-                    coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            "Save functionality will be implemented in Module 05"
-                        )
-                    }
-                }
+                text = if (uiState.isSaving) "Saving..." else "Save Record",
+                onClick = { viewModel.saveRecord() },
+                enabled = !uiState.isSaving
             )
+
+            if (uiState.isSaving) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -183,7 +208,7 @@ fun AddRecordScreen() {
     // Date picker dialog
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = DatePickerUtils.localDateToMillis(selectedDate)
+            initialSelectedDateMillis = DatePickerUtils.localDateToMillis(uiState.date)
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -191,7 +216,8 @@ fun AddRecordScreen() {
                 TextButton(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            selectedDate = DatePickerUtils.millisToLocalDate(millis)
+                            val selectedDate = DatePickerUtils.millisToLocalDate(millis)
+                            viewModel.onDateChange(selectedDate)
                         }
                         showDatePicker = false
                     }
