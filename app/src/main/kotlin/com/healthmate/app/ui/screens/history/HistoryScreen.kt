@@ -13,14 +13,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
@@ -30,9 +30,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.healthmate.app.ui.components.EmptyState
 import com.healthmate.app.ui.components.HealthRecordCard
 import com.healthmate.app.ui.components.SectionHeader
-import com.healthmate.app.ui.components.EmptyState
 import com.healthmate.app.util.DateFormatter
 import com.healthmate.app.util.DatePickerUtils
 import java.time.LocalDate
@@ -70,6 +70,7 @@ fun HistoryScreen() {
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
+        // Fixed header section
         SectionHeader(
             title = "Health Records",
             subtitle = "Search and review your past entries"
@@ -77,7 +78,6 @@ fun HistoryScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Date filter field
         OutlinedTextField(
             value = filterDate?.let { DateFormatter.formatForDisplay(it.toString()) } ?: "",
             onValueChange = { },
@@ -113,17 +113,28 @@ fun HistoryScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Scrollable content region — takes remaining space via weight(1f)
         if (filteredRecords.isEmpty()) {
-            EmptyState(
-                title = "No records found",
-                message = if (filterDate != null) {
-                    "No record exists for the selected date. Clear the filter to see all records."
-                } else {
-                    "Your health records will appear here once you start adding entries."
-                }
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                EmptyState(
+                    title = "No records found",
+                    message = if (filterDate != null) {
+                        "No record exists for the selected date. Clear the filter to see all records."
+                    } else {
+                        "Your health records will appear here once you start adding entries."
+                    }
+                )
+            }
         } else {
             LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(filteredRecords) { record ->
