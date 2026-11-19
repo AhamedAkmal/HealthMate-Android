@@ -15,6 +15,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Initialize the database helper to trigger onCreate() on first launch
+        val dbHelper = com.healthmate.app.data.local.HealthDatabaseHelper(this)
+        dbHelper.writableDatabase // Accessing this property forces database creation
+
         setContent {
             HealthMateTheme {
                 Surface(
