@@ -1,6 +1,7 @@
 package com.healthmate.app.ui.screens.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,10 +19,17 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.healthmate.app.presentation.dashboard.DashboardViewModel
+import com.healthmate.app.ui.components.ErrorMessage
 import com.healthmate.app.ui.components.HealthMetricCard
+import com.healthmate.app.ui.components.LoadingIndicator
 import com.healthmate.app.ui.components.PrimaryButton
 import com.healthmate.app.ui.components.SectionHeader
 import com.healthmate.app.ui.theme.CaloriesContainer
@@ -34,8 +42,26 @@ import com.healthmate.app.util.DateFormatter
 
 @Composable
 fun DashboardScreen(
+    viewModel: DashboardViewModel,
     onAddRecordClick: () -> Unit = {}
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Refresh the dashboard every time this screen enters the composition
+    LaunchedEffect(Unit) {
+        viewModel.refreshDashboard()
+    }
+
+    if (uiState.isLoading) {
+        LoadingIndicator()
+        return
+    }
+
+    if (uiState.error != null) {
+        ErrorMessage(message = uiState.error!!)
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -65,7 +91,7 @@ fun DashboardScreen(
 
         HealthMetricCard(
             title = "Steps",
-            value = "0",
+            value = uiState.todayRecord?.steps?.toString() ?: "0",
             unit = "steps",
             icon = Icons.Filled.DirectionsWalk,
             iconColor = StepsGreen,
@@ -74,7 +100,7 @@ fun DashboardScreen(
 
         HealthMetricCard(
             title = "Calories",
-            value = "0",
+            value = uiState.todayRecord?.calories?.toString() ?: "0",
             unit = "kcal",
             icon = Icons.Filled.LocalFireDepartment,
             iconColor = CaloriesOrange,
@@ -83,7 +109,7 @@ fun DashboardScreen(
 
         HealthMetricCard(
             title = "Water",
-            value = "0",
+            value = uiState.todayRecord?.water?.toString() ?: "0",
             unit = "ml",
             icon = Icons.Filled.WaterDrop,
             iconColor = WaterBlue,
@@ -92,43 +118,40 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Daily Summary section with empty state
-        SectionHeader(
-            title = "Daily Summary",
-            subtitle = "Your health data will appear here once you start recording"
-        )
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+        // Empty State Logic
+        if (uiState.todayRecord == null) {
+            SectionHeader(
+                title = "Daily Summary",
+                subtitle = "No record found for today"
+            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
-                Text(
-                    text = "No records yet",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Add your first entry to start tracking your daily health.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                PrimaryButton(
-                    text = "Add Record",
-                    onClick = onAddRecordClick
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "No record for today",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Add your entry to start tracking today's health.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    PrimaryButton(
+                        text = "Add Record",
+                        onClick = onAddRecordClick
+                    )
+                }
             }
         }
     }

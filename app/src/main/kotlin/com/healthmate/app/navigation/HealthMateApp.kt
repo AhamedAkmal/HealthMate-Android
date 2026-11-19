@@ -19,6 +19,7 @@ import com.healthmate.app.data.local.HealthDatabaseHelper
 import com.healthmate.app.data.repository.HealthRecordRepositoryImpl
 import com.healthmate.app.domain.repository.HealthRecordRepository
 import com.healthmate.app.presentation.addrecord.AddRecordViewModel
+import com.healthmate.app.presentation.dashboard.DashboardViewModel
 import com.healthmate.app.presentation.editrecord.EditRecordViewModel
 import com.healthmate.app.presentation.history.HistoryViewModel
 import com.healthmate.app.ui.components.BottomNavigationBar
@@ -37,6 +38,12 @@ fun HealthMateApp() {
         val dbHelper = HealthDatabaseHelper(context.applicationContext)
         HealthRecordRepositoryImpl(dbHelper)
     }
+
+    val dashboardViewModel: DashboardViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { DashboardViewModel(repository) }
+        }
+    )
 
     val addRecordViewModel: AddRecordViewModel = viewModel(
         factory = viewModelFactory {
@@ -87,6 +94,7 @@ fun HealthMateApp() {
             entryProvider = entryProvider {
                 entry<Dashboard> {
                     DashboardScreen(
+                        viewModel = dashboardViewModel,
                         onAddRecordClick = { currentRoute = AddRecord }
                     )
                 }
@@ -97,11 +105,10 @@ fun HealthMateApp() {
                     HistoryScreen(
                         viewModel = historyViewModel,
                         onEditClick = { id -> currentRoute = EditRecord(id) },
-                        onDeleteClick = { id -> currentRoute = EditRecord(id) } 
+                        onDeleteClick = { id -> currentRoute = EditRecord(id) }
                     )
                 }
                 entry<EditRecord> { key ->
-                    // Load the record when this screen is created
                     androidx.compose.runtime.LaunchedEffect(key.id) {
                         editRecordViewModel.loadRecord(key.id)
                     }
