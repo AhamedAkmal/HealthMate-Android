@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.healthmate.ui.theme
+package com.healthmate.app.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
