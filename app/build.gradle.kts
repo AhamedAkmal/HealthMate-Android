@@ -5,12 +5,12 @@ plugins {
 }
 
 android {
-  namespace = "com.example.healthmate"
-  compileSdk = 37
+  namespace = "com.healthmate.app"
+  compileSdk = 36
   defaultConfig {
     applicationId = "com.healthmate.app"
     minSdk = 24
-    targetSdk = 37
+    targetSdk = 36
     versionCode = 1
     versionName = "1.0"
   }
