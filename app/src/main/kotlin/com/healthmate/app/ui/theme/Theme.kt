@@ -1,19 +1,3 @@
-/*
- * Copyright 2026 The Android Open Source Project
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.healthmate.app.ui.theme
 
 import android.os.Build
@@ -26,24 +10,53 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = primaryDark,
-    primaryContainer = primaryContainerDark,
-    secondary = secondaryDark,
-    tertiary = tertiaryDark
-)
+// ============================================================
+// HealthMate Light and Dark Colour Schemes
+// ============================================================
 
 private val LightColorScheme = lightColorScheme(
-    primary = primaryLight,
-    primaryContainer = primaryContainerLight,
-    secondary = secondaryLight,
-    tertiary = tertiaryLight
+    primary              = PrimaryGreen,
+    onPrimary            = OnPrimaryGreen,
+    primaryContainer     = PrimaryContainer,
+    onPrimaryContainer   = OnPrimaryContainer,
+    secondary            = SecondaryTeal,
+    onSecondary          = OnSecondaryTeal,
+    background           = BackgroundLight,
+    onBackground         = OnBackgroundLight,
+    surface              = SurfaceLight,
+    onSurface            = OnSurfaceLight,
+    surfaceVariant       = SurfaceVariantLight,
+    onSurfaceVariant     = OnSurfaceVariantLight,
+    outline              = OutlineLight,
+    error                = ErrorLight,
+    onError              = OnErrorLight
 )
+
+private val DarkColorScheme = darkColorScheme(
+    primary              = PrimaryGreenDark,
+    onPrimary            = OnPrimaryGreenDark,
+    primaryContainer     = PrimaryContainerDark,
+    onPrimaryContainer   = OnPrimaryContainerDark,
+    secondary            = SecondaryTealDark,
+    onSecondary          = OnSecondaryTealDark,
+    background           = BackgroundDark,
+    onBackground         = OnBackgroundDark,
+    surface              = SurfaceDark,
+    onSurface            = OnSurfaceDark,
+    surfaceVariant       = SurfaceVariantDark,
+    onSurfaceVariant     = OnSurfaceVariantDark,
+    outline              = OutlineDark,
+    error                = ErrorDark,
+    onError              = OnErrorDark
+)
+
+// ============================================================
+// HealthMate Theme
+// ============================================================
 
 @Composable
 fun HealthMateTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
@@ -59,7 +72,7 @@ fun HealthMateTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
+        shapes = Shapes,
         content = content
     )
 }
-
