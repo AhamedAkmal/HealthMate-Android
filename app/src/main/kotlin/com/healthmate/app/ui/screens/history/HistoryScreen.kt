@@ -1,6 +1,7 @@
 package com.healthmate.app.ui.screens.history
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,49 +29,32 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.healthmate.app.presentation.history.HistoryViewModel
 import com.healthmate.app.ui.components.EmptyState
+import com.healthmate.app.ui.components.ErrorMessage
 import com.healthmate.app.ui.components.HealthRecordCard
+import com.healthmate.app.ui.components.LoadingIndicator
 import com.healthmate.app.ui.components.SectionHeader
 import com.healthmate.app.util.DateFormatter
 import com.healthmate.app.util.DatePickerUtils
-import java.time.LocalDate
-
-data class HistoryRecord(
-    val date: String,
-    val steps: Int,
-    val calories: Int,
-    val water: Int
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen() {
-    // Placeholder data — replaced by database in Module 03+
-    val sampleRecords = remember {
-        val today = LocalDate.now()
-        listOf(
-            HistoryRecord(today.toString(), 7850, 420, 2000),
-            HistoryRecord(today.minusDays(1).toString(), 6200, 380, 1800),
-            HistoryRecord(today.minusDays(2).toString(), 9100, 510, 2400)
-        )
-    }
-
-    var filterDate by remember { mutableStateOf<LocalDate?>(null) }
+fun HistoryScreen(
+    viewModel: HistoryViewModel
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
-
-    val filteredRecords = remember(filterDate, sampleRecords) {
-        if (filterDate == null) sampleRecords
-        else sampleRecords.filter { it.date == filterDate.toString() }
-    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 16.dp)
     ) {
-        // Fixed header section
         SectionHeader(
             title = "Health Records",
             subtitle = "Search and review your past entries"
@@ -78,8 +62,9 @@ fun HistoryScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Date filter field
         OutlinedTextField(
-            value = filterDate?.let { DateFormatter.formatForDisplay(it.toString()) } ?: "",
+            value = uiState.filterDate?.let { DateFormatter.formatForDisplay(it.toString()) } ?: "",
             onValueChange = { },
             readOnly = true,
             label = { Text("Filter by date") },
@@ -91,8 +76,8 @@ fun HistoryScreen() {
                 )
             },
             trailingIcon = {
-                if (filterDate != null) {
-                    IconButton(onClick = { filterDate = null }) {
+                if (uiState.filterDate != null) {
+                    IconButton(onClick = { viewModel.clearFilter() }) {
                         Icon(
                             imageVector = Icons.Filled.Clear,
                             contentDescription = "Clear filter"
@@ -113,37 +98,38 @@ fun HistoryScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Scrollable content region — takes remaining space via weight(1f)
-        if (filteredRecords.isEmpty()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                EmptyState(
-                    title = "No records found",
-                    message = if (filterDate != null) {
-                        "No record exists for the selected date. Clear the filter to see all records."
-                    } else {
-                        "Your health records will appear here once you start adding entries."
-                    }
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(filteredRecords) { record ->
-                    HealthRecordCard(
-                        dateIso = record.date,
-                        steps = record.steps,
-                        calories = record.calories,
-                        water = record.water
+        // Screen Content based on state
+        Box(modifier = Modifier.weight(1f)) {
+            when {
+                uiState.isLoading -> LoadingIndicator()
+
+                uiState.error != null -> ErrorMessage(message = uiState.error!!)
+
+                uiState.displayedRecords.isEmpty() -> {
+                    EmptyState(
+                        title = "No records found",
+                        message = if (uiState.filterDate != null) {
+                            "No record exists for the selected date. Clear the filter to see all records."
+                        } else {
+                            "Your health records will appear here once you start adding entries."
+                        }
                     )
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(uiState.displayedRecords) { record ->
+                            HealthRecordCard(
+                                dateIso = record.date,
+                                steps = record.steps,
+                                calories = record.calories,
+                                water = record.water
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -151,14 +137,16 @@ fun HistoryScreen() {
 
     // Date picker dialog
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState()
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = uiState.filterDate?.let { DatePickerUtils.localDateToMillis(it) }
+        )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            filterDate = DatePickerUtils.millisToLocalDate(millis)
+                            viewModel.onFilterDateChange(DatePickerUtils.millisToLocalDate(millis))
                         }
                         showDatePicker = false
                     }

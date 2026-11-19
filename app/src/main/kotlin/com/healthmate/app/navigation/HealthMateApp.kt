@@ -17,7 +17,9 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.healthmate.app.data.local.HealthDatabaseHelper
 import com.healthmate.app.data.repository.HealthRecordRepositoryImpl
+import com.healthmate.app.domain.repository.HealthRecordRepository
 import com.healthmate.app.presentation.addrecord.AddRecordViewModel
+import com.healthmate.app.presentation.history.HistoryViewModel
 import com.healthmate.app.ui.components.BottomNavigationBar
 import com.healthmate.app.ui.components.HealthMateTopBar
 import com.healthmate.app.ui.screens.addrecord.AddRecordScreen
@@ -29,14 +31,23 @@ fun HealthMateApp() {
     var currentRoute by remember { mutableStateOf<NavKey>(Dashboard) }
     val context = LocalContext.current
 
-    // Create the ViewModel once at the top level so it survives navigation
+    // Create a single Repository instance shared across ViewModels
+    val repository: HealthRecordRepository = remember {
+        val dbHelper = HealthDatabaseHelper(context.applicationContext)
+        HealthRecordRepositoryImpl(dbHelper)
+    }
+
+    // Add Record ViewModel
     val addRecordViewModel: AddRecordViewModel = viewModel(
         factory = viewModelFactory {
-            initializer {
-                val dbHelper = HealthDatabaseHelper(context.applicationContext)
-                val repository = HealthRecordRepositoryImpl(dbHelper)
-                AddRecordViewModel(repository)
-            }
+            initializer { AddRecordViewModel(repository) }
+        }
+    )
+
+    // History ViewModel
+    val historyViewModel: HistoryViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { HistoryViewModel(repository) }
         }
     )
 
@@ -74,11 +85,10 @@ fun HealthMateApp() {
                     )
                 }
                 entry<AddRecord> {
-                    // Pass the ViewModel to the screen
                     AddRecordScreen(viewModel = addRecordViewModel)
                 }
                 entry<History> {
-                    HistoryScreen()
+                    HistoryScreen(viewModel = historyViewModel)
                 }
             }
         )
