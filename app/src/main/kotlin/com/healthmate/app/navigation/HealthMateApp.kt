@@ -50,7 +50,9 @@ fun HealthMateApp() {
             },
             entryProvider = entryProvider {
                 entry<Dashboard> {
-                    DashboardScreen()
+                    DashboardScreen(
+                        onAddRecordClick = { currentRoute = AddRecord }
+                    )
                 }
                 entry<AddRecord> {
                     AddRecordScreen()
