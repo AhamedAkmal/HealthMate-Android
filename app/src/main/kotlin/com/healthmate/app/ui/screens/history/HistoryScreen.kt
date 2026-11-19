@@ -29,7 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -45,7 +44,9 @@ import com.healthmate.app.util.DatePickerUtils
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    viewModel: HistoryViewModel
+    viewModel: HistoryViewModel,
+    onEditClick: (Long) -> Unit,
+    onDeleteClick: (Long) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showDatePicker by remember { mutableStateOf(false) }
@@ -126,7 +127,9 @@ fun HistoryScreen(
                                 dateIso = record.date,
                                 steps = record.steps,
                                 calories = record.calories,
-                                water = record.water
+                                water = record.water,
+                                onClick = { onEditClick(record.id) },
+                                onDeleteClick = { onDeleteClick(record.id) }
                             )
                         }
                     }

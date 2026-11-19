@@ -11,3 +11,6 @@ data object AddRecord : NavKey
 
 @Serializable
 data object History : NavKey
+
+@Serializable
+data class EditRecord(val id: Long) : NavKey

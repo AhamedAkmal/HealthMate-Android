@@ -19,11 +19,13 @@ import com.healthmate.app.data.local.HealthDatabaseHelper
 import com.healthmate.app.data.repository.HealthRecordRepositoryImpl
 import com.healthmate.app.domain.repository.HealthRecordRepository
 import com.healthmate.app.presentation.addrecord.AddRecordViewModel
+import com.healthmate.app.presentation.editrecord.EditRecordViewModel
 import com.healthmate.app.presentation.history.HistoryViewModel
 import com.healthmate.app.ui.components.BottomNavigationBar
 import com.healthmate.app.ui.components.HealthMateTopBar
 import com.healthmate.app.ui.screens.addrecord.AddRecordScreen
 import com.healthmate.app.ui.screens.dashboard.DashboardScreen
+import com.healthmate.app.ui.screens.editrecord.EditRecordScreen
 import com.healthmate.app.ui.screens.history.HistoryScreen
 
 @Composable
@@ -31,23 +33,26 @@ fun HealthMateApp() {
     var currentRoute by remember { mutableStateOf<NavKey>(Dashboard) }
     val context = LocalContext.current
 
-    // Create a single Repository instance shared across ViewModels
     val repository: HealthRecordRepository = remember {
         val dbHelper = HealthDatabaseHelper(context.applicationContext)
         HealthRecordRepositoryImpl(dbHelper)
     }
 
-    // Add Record ViewModel
     val addRecordViewModel: AddRecordViewModel = viewModel(
         factory = viewModelFactory {
             initializer { AddRecordViewModel(repository) }
         }
     )
 
-    // History ViewModel
     val historyViewModel: HistoryViewModel = viewModel(
         factory = viewModelFactory {
             initializer { HistoryViewModel(repository) }
+        }
+    )
+
+    val editRecordViewModel: EditRecordViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { EditRecordViewModel(repository) }
         }
     )
 
@@ -55,6 +60,7 @@ fun HealthMateApp() {
         Dashboard -> "HealthMate"
         AddRecord -> "Add Record"
         History -> "History"
+        is EditRecord -> "Edit Record"
         else -> "HealthMate"
     }
 
@@ -88,7 +94,21 @@ fun HealthMateApp() {
                     AddRecordScreen(viewModel = addRecordViewModel)
                 }
                 entry<History> {
-                    HistoryScreen(viewModel = historyViewModel)
+                    HistoryScreen(
+                        viewModel = historyViewModel,
+                        onEditClick = { id -> currentRoute = EditRecord(id) },
+                        onDeleteClick = { id -> currentRoute = EditRecord(id) } 
+                    )
+                }
+                entry<EditRecord> { key ->
+                    // Load the record when this screen is created
+                    androidx.compose.runtime.LaunchedEffect(key.id) {
+                        editRecordViewModel.loadRecord(key.id)
+                    }
+                    EditRecordScreen(
+                        viewModel = editRecordViewModel,
+                        onNavigateBack = { currentRoute = History }
+                    )
                 }
             }
         )
