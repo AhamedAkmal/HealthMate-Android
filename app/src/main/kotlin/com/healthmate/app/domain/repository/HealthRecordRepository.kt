@@ -29,4 +29,6 @@ interface HealthRecordRepository {
      * This is used by the Dashboard and History screens to auto-refresh.
      */
     fun observeAllRecords(): Flow<List<HealthRecord>>
+
+    suspend fun getRecordsBetweenDates(startDate: String, endDate: String): Result<List<HealthRecord>>
 }

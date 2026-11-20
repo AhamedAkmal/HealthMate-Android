@@ -168,6 +168,29 @@ class HealthRecordRepositoryImpl(
     }.flowOn(Dispatchers.IO)
 
     // ==========================================
+    // READ: BY DATE RANGE
+    // ==========================================
+    override suspend fun getRecordsBetweenDates(startDate: String, endDate: String): Result<List<HealthRecord>> = withContext(Dispatchers.IO) {
+        try {
+            val db = dbHelper.readableDatabase
+            val cursor = db.query(
+                DatabaseConstants.TABLE_HEALTH_RECORDS,
+                null,
+                "${DatabaseConstants.COLUMN_DATE} BETWEEN ? AND ?",
+                arrayOf(startDate, endDate),
+                null, null,
+                "${DatabaseConstants.COLUMN_DATE} ASC" // Order by date ascending for charts
+            )
+
+            val records = cursor.use { it.toHealthRecordList() }
+            Result.Success(records)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting records between dates", e)
+            Result.Error(e)
+        }
+    }
+
+    // ==========================================
     // MAPPERS (Extension Functions)
     // ==========================================
 

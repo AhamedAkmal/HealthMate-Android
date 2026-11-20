@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
 
@@ -28,5 +29,10 @@ val bottomNavItems = listOf(
         label = "History",
         icon = Icons.Filled.List,
         route = History
+    ),
+    BottomNavItem(
+        label = "Stats",
+        icon = Icons.Filled.Star,
+        route = Statistics
     )
 )

@@ -17,3 +17,6 @@ data class EditRecord(val id: Long) : NavKey
 
 @Serializable
 data object GoalSettings : NavKey
+
+@Serializable
+data object Statistics : NavKey

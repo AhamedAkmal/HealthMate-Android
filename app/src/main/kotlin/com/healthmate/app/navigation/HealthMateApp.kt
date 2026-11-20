@@ -25,6 +25,7 @@ import com.healthmate.app.presentation.dashboard.DashboardViewModel
 import com.healthmate.app.presentation.editrecord.EditRecordViewModel
 import com.healthmate.app.presentation.goals.GoalSettingsViewModel
 import com.healthmate.app.presentation.history.HistoryViewModel
+import com.healthmate.app.presentation.statistics.StatisticsViewModel
 import com.healthmate.app.ui.components.BottomNavigationBar
 import com.healthmate.app.ui.components.HealthMateTopBar
 import com.healthmate.app.ui.screens.addrecord.AddRecordScreen
@@ -32,6 +33,7 @@ import com.healthmate.app.ui.screens.dashboard.DashboardScreen
 import com.healthmate.app.ui.screens.editrecord.EditRecordScreen
 import com.healthmate.app.ui.screens.goals.GoalSettingsScreen
 import com.healthmate.app.ui.screens.history.HistoryScreen
+import com.healthmate.app.ui.screens.statistics.StatisticsScreen
 
 @Composable
 fun HealthMateApp() {
@@ -77,12 +79,19 @@ fun HealthMateApp() {
         }
     )
 
+    val statisticsViewModel: StatisticsViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { StatisticsViewModel(healthRecordRepository) }
+        }
+    )
+
     val screenTitle = when (currentRoute) {
         Dashboard -> "HealthMate"
         AddRecord -> "Add Record"
         History -> "History"
         is EditRecord -> "Edit Record"
         is GoalSettings -> "Daily Goals"
+        Statistics -> "Weekly Stats" // <-- ADDED THIS
         else -> "HealthMate"
     }
 
@@ -138,6 +147,9 @@ fun HealthMateApp() {
                         viewModel = goalSettingsViewModel,
                         onNavigateBack = { currentRoute = Dashboard }
                     )
+                }
+                entry<Statistics> { // <-- ADDED THIS
+                    StatisticsScreen(viewModel = statisticsViewModel)
                 }
             }
         )
