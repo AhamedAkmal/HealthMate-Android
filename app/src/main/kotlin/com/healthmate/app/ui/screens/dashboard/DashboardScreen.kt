@@ -1,23 +1,27 @@
 package com.healthmate.app.ui.screens.dashboard
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,11 +47,11 @@ import com.healthmate.app.util.DateFormatter
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
-    onAddRecordClick: () -> Unit = {}
+    onAddRecordClick: () -> Unit = {},
+    onSetGoalsClick: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Refresh the dashboard every time this screen enters the composition
     LaunchedEffect(Unit) {
         viewModel.refreshDashboard()
     }
@@ -84,10 +88,22 @@ fun DashboardScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Today's Activity
-        SectionHeader(title = "Today's Activity")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SectionHeader(title = "Today's Activity")
+            TextButton(onClick = onSetGoalsClick) {
+                Icon(
+                    imageVector = Icons.Filled.Settings,
+                    contentDescription = null,
+                    modifier = Modifier.width(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Goals")
+            }
+        }
 
         HealthMetricCard(
             title = "Steps",
@@ -95,7 +111,9 @@ fun DashboardScreen(
             unit = "steps",
             icon = Icons.Filled.DirectionsWalk,
             iconColor = StepsGreen,
-            iconBackground = StepsGreenContainer
+            iconBackground = StepsGreenContainer,
+            progress = if (uiState.hasGoals) uiState.stepsProgress else null,
+            goalText = if (uiState.hasGoals) "Goal: ${uiState.stepsGoal}" else null
         )
 
         HealthMetricCard(
@@ -104,7 +122,9 @@ fun DashboardScreen(
             unit = "kcal",
             icon = Icons.Filled.LocalFireDepartment,
             iconColor = CaloriesOrange,
-            iconBackground = CaloriesContainer
+            iconBackground = CaloriesContainer,
+            progress = if (uiState.hasGoals) uiState.caloriesProgress else null,
+            goalText = if (uiState.hasGoals) "Goal: ${uiState.caloriesGoal}" else null
         )
 
         HealthMetricCard(
@@ -113,12 +133,21 @@ fun DashboardScreen(
             unit = "ml",
             icon = Icons.Filled.WaterDrop,
             iconColor = WaterBlue,
-            iconBackground = WaterContainer
+            iconBackground = WaterContainer,
+            progress = if (uiState.hasGoals) uiState.waterProgress else null,
+            goalText = if (uiState.hasGoals) "Goal: ${uiState.waterGoal}" else null
         )
+
+        if (!uiState.hasGoals) {
+            Text(
+                text = "Tap 'Goals' to set your daily targets and track your progress.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Empty State Logic
         if (uiState.todayRecord == null) {
             SectionHeader(
                 title = "Daily Summary",
